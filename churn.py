@@ -6,8 +6,17 @@ import matplotlib.pyplot as plt
 import statsmodels.api as sms
 from sklearn.cross_validation import train_test_split
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import mean_squared_error, accuracy_score
+from sklearn.metrics import mean_squared_error, accuracy_score,confusion_matrix
+
 #%matplotlib inline
+
+from sklearn.ensemble import RandomForestClassifier as RF
+from sklearn.ensemble import GradientBoostingClassifier as GBC
+from sklearn.ensemble import AdaBoostClassifier as ABC
+from sklearn.svm import SVC
+from sklearn.grid_search import GridSearchCV
+
+
 
 def load_data():
     odata = pd.read_csv('churn_train.csv')
@@ -18,11 +27,16 @@ def load_data():
     odata = pd.get_dummies(data=odata, columns=['city'])
 
     #take only required columns
-    mdata = odata[['avg_dist','avg_surge','city_King\'s Landing','city_Winterfell','surge_pct','trips_in_first_30_days','luxury_car_user','weekday_pct','active']]
+    mdata = odata[['avg_dist','avg_surge','city_Astapor','city_King\'s Landing','city_Winterfell','surge_pct','trips_in_first_30_days','luxury_car_user','weekday_pct','active']]
     y = mdata.pop('active')
     X = mdata.values
     X_train,X_test,y_train,y_test = train_test_split(X,y)
-    return mdata, X_train,X_test,y_train,y_test
+    return mdata,X_train,X_test,y_train,y_test
+
+def standard_confusion_matrix(y_true, y_pred):
+    [[tn, fp], [fn, tp]] = confusion_matrix(y_true, y_pred)
+    return np.array([[tp, fp], [fn, tn]])
+
 
 # Jeff Li add
 
@@ -41,11 +55,29 @@ def logistic_modeling(X_train, X_test, y_train, y_test):
 if __name__ == '__main__':
     mdata,X_train,X_test,y_train,y_test = load_data()
 
-    # X_train, X_test, y_train, y_test = cross_val(X,y)
-    # result = model_summary(X_train, X_test, y_train, y_test)
-
     '------------Logistic Regression------------'
     # print 'Logistic Regression', result.summary()
     MSE, accuracy = logistic_modeling(X_train, X_test, y_train, y_test)
     print 'Mean Squared Error', MSE
     print 'Accuracy', accuracy
+
+    '------------GradientBoostingClassifier------------'
+    mod = GBC(n_estimators=100,learning_rate=0.1,max_depth=5).fit(X_train,y_train)
+    y_proba = mod.predict_proba(X_test)[:,1]
+    thre = 0.5
+    y_predict = (y_proba>thre).astype(int)
+    MS = mean_squared_error(y_test,y_predict)
+    AS = accuracy_score(y_test,y_predict)
+    cm = standard_confusion_matrix(y_test, y_predict)
+    print 'Threshold : {} MeanSquaredError : {} Accuracty : {}'.format(thre,MS,AS)
+    print 'Confusion matrix :', cm
+    print '===================================================='
+
+    '------------Feature Importance------------'
+    feat_import = mod.feature_importances_
+    top10_nx = np.argsort(feat_import)[::-1][0:10]
+    feat_import = feat_import[top10_nx]
+    print feat_import
+    print mdata.columns[top10_nx]
+
+    
