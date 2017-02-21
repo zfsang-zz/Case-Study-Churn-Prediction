@@ -11,10 +11,11 @@ def load_data():
     odata['signup_date'] = pd.to_datetime(odata['signup_date'],format='%Y-%m-%d')
     cutoff_date = datetime.strptime('2014-07-01','%Y-%m-%d').date() -pd.DateOffset(30, 'D')
     odata['active'] = odata['last_trip_date'] >= cutoff_date
+    odata = pd.get_dummies(data=odata, drop_first=True, columns=['city'])
 
     #take only required columns
-    mdata = odata[['avg_dist','avg_surge','city','surge_pct','trips_in_first_30_days','luxury_car_user','weekday_pct','active']]
+    mdata = odata[['avg_dist','avg_surge','city_King\'s Landing','city_Winterfell','surge_pct','trips_in_first_30_days','luxury_car_user','weekday_pct','active']]
     y = mdata.pop('active')
     X = mdata.values
     X_train,X_test,y_train,y_test = train_test_split(X,y)
-    return X_train,X_test,y_train,y_test
+    return mdata,X_train,X_test,y_train,y_test
