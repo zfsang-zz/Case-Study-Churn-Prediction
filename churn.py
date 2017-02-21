@@ -33,6 +33,24 @@ def load_data():
     X_train,X_test,y_train,y_test = train_test_split(X,y)
     return mdata,X_train,X_test,y_train,y_test
 
+#jeff sang
+def load_data_with_history():
+    odata = pd.read_csv('data/churn_train.csv')
+    odata['last_trip_date'] = pd.to_datetime(odata['last_trip_date'],format='%Y-%m-%d')
+    odata['signup_date'] = pd.to_datetime(odata['signup_date'],format='%Y-%m-%d')
+    cutoff_date = datetime.strptime('2014-07-01','%Y-%m-%d').date() -pd.DateOffset(30, 'D')
+    odata['active'] = odata['last_trip_date'] >= cutoff_date
+    odata = pd.get_dummies(data=odata, columns=['city'])
+    odata['history'] = odata['last_trip_date'] - odata['signup_date']
+    
+    #take only required columns
+    mdata = odata[['avg_dist','avg_surge','city_King\'s Landing','city_Winterfell','surge_pct','trips_in_first_30_days','luxury_car_user','weekday_pct','history','active']]
+    y = mdata.pop('active')
+    X = mdata.values
+    X_train,X_test,y_train,y_test = train_test_split(X,y)
+    return mdata, X_train,X_test,y_train,y_test
+
+
 def standard_confusion_matrix(y_true, y_pred):
     [[tn, fp], [fn, tp]] = confusion_matrix(y_true, y_pred)
     return np.array([[tp, fp], [fn, tn]])
