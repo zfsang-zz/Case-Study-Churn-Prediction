@@ -37,31 +37,16 @@ def standard_confusion_matrix(y_true, y_pred):
     [[tn, fp], [fn, tp]] = confusion_matrix(y_true, y_pred)
     return np.array([[tp, fp], [fn, tn]])
 
-
-# Jeff Li add
-
-# def model_summary(X_train, X_test, y_train, y_test):
-#     logit = sms.Logit(y_train, X_train)
-#     result = logit.fit()
-#     return result
-
 def logistic_modeling(X_train, X_test, y_train, y_test):
-    lr = LogisticRegression().fit(X_train, y_train)
-    predicted_y = lr.predict(X_test)
-    MSE = mean_squared_error(y_test, predicted_y)
-    accuracy = accuracy_score(y_test, predicted_y)
-    return MSE, accuracy
+    mod = LogisticRegression().fit(X_train, y_train)
+    thre = 0.5
+    predicted_y = mod.predict(X_test)
+    MS = mean_squared_error(y_test, predicted_y)
+    AS = accuracy_score(y_test, predicted_y)
+    cm = standard_confusion_matrix(y_test, predicted_y)
+    return mod, thre, MS, AS, cm
 
-if __name__ == '__main__':
-    mdata,X_train,X_test,y_train,y_test = load_data()
-
-    '------------Logistic Regression------------'
-    # print 'Logistic Regression', result.summary()
-    MSE, accuracy = logistic_modeling(X_train, X_test, y_train, y_test)
-    print 'Mean Squared Error', MSE
-    print 'Accuracy', accuracy
-
-    '------------GradientBoostingClassifier------------'
+def GradientBoostingClassifier(X_train, X_test, y_train, y_test):
     mod = GBC(n_estimators=100,learning_rate=0.1,max_depth=5).fit(X_train,y_train)
     y_proba = mod.predict_proba(X_test)[:,1]
     thre = 0.5
@@ -69,7 +54,22 @@ if __name__ == '__main__':
     MS = mean_squared_error(y_test,y_predict)
     AS = accuracy_score(y_test,y_predict)
     cm = standard_confusion_matrix(y_test, y_predict)
-    print 'Threshold : {} MeanSquaredError : {} Accuracty : {}'.format(thre,MS,AS)
+    return mod, thre, MS, AS, cm
+
+
+if __name__ == '__main__':
+    mdata,X_train,X_test,y_train,y_test = load_data()
+
+    print '------------Logistic Regression------------'
+    # print 'Logistic Regression', result.summary()
+    mod, thre, MS, AS, cm = logistic_modeling(X_train, X_test, y_train, y_test)
+    print 'Threshold : {} MeanSquaredError : {} Accuracy : {}'.format(thre,MS,AS)
+    print 'Confusion matrix', cm
+
+    print '------------GradientBoostingClassifier------------'
+
+    mod, thre, MS, AS, cm = GradientBoostingClassifier(X_train, X_test, y_train, y_test)
+    print 'Threshold : {} MeanSquaredError : {} Accuracy : {}'.format(thre,MS,AS)
     print 'Confusion matrix :', cm
     print '===================================================='
 
@@ -79,5 +79,3 @@ if __name__ == '__main__':
     feat_import = feat_import[top10_nx]
     print feat_import
     print mdata.columns[top10_nx]
-
-    
