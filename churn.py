@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import statsmodels.api as sms
 from sklearn.cross_validation import train_test_split
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import mean_squared_error, accuracy_score,confusion_matrix
+from sklearn.metrics import mean_squared_error, accuracy_score,confusion_matrix, precision_score, recall_score
 
 #%matplotlib inline
 
@@ -35,7 +35,7 @@ def load_data():
 
 #jeff sang
 def load_data_with_history_missing():
-    odata = pd.read_csv('data/churn_train.csv')
+    odata = pd.read_csv('data/churn_test.csv')
     odata['last_trip_date'] = pd.to_datetime(odata['last_trip_date'],format='%Y-%m-%d')
     odata['signup_date'] = pd.to_datetime(odata['signup_date'],format='%Y-%m-%d')
     cutoff_date = datetime.strptime('2014-07-01','%Y-%m-%d').date() -pd.DateOffset(30, 'D')
@@ -48,7 +48,6 @@ def load_data_with_history_missing():
     # create history column
     # odata['history']
     # replace missing value by average value
-    odata = odata[odata['avg_rating_by_driver'].isnull()]
     odata.fillna(odata.mean(),inplace=True)
     mdata = odata[['avg_dist','avg_rating_of_driver','avg_rating_by_driver','avg_surge','city_Astapor','city_King\'s Landing','city_Winterfell','surge_pct','trips_in_first_30_days','luxury_car_user','weekday_pct','history','active','Rating Greater than 4']]
     #mdata = mdata[mdata['city_Winterfell'] == 1]
@@ -69,7 +68,9 @@ def logistic_modeling(X_train, X_test, y_train, y_test):
     MS = mean_squared_error(y_test, predicted_y)
     AS = accuracy_score(y_test, predicted_y)
     cm = standard_confusion_matrix(y_test, predicted_y)
-    return mod, thre, MS, AS, cm
+    p = precision_score(y_test, predicted_y)
+    r = recall_score(y_test, predicted_y)
+    return mod, thre, MS, AS, cm, p, r
 
 def GradientBoostingClassifier(X_train, X_test, y_train, y_test):
     mod = GBC(n_estimators=100,learning_rate=0.1,max_depth=5).fit(X_train,y_train)
@@ -79,7 +80,9 @@ def GradientBoostingClassifier(X_train, X_test, y_train, y_test):
     MS = mean_squared_error(y_test,y_predict)
     AS = accuracy_score(y_test,y_predict)
     cm = standard_confusion_matrix(y_test, y_predict)
-    return mod, thre, MS, AS, cm
+    p = precision_score(y_test, y_predict)
+    r = recall_score(y_test, y_predict)
+    return mod, thre, MS, AS, cm, p, r
 
 def RandomForestClassifier(X_train, X_test, y_train, y_test):
     mod = RF(n_estimators=100,max_depth=5).fit(X_train,y_train)
@@ -89,33 +92,36 @@ def RandomForestClassifier(X_train, X_test, y_train, y_test):
     MS = mean_squared_error(y_test,y_predict)
     AS = accuracy_score(y_test,y_predict)
     cm = standard_confusion_matrix(y_test, y_predict)
-    return mod, thre, MS, AS, cm
+    p = precision_score(y_test, y_predict)
+    r = recall_score(y_test, y_predict)
+    return mod, thre, MS, AS, cm, p, r
 
 
 if __name__ == '__main__':
     mdata, X_train, X_test, y_train, y_test = load_data_with_history_missing()
     print '------------Logistic Regression------------'
     # print 'Logistic Regression', result.summary()
-    mod, thre, MS, AS, cm = logistic_modeling(X_train, X_test, y_train, y_test)
-    print 'Threshold : {} MeanSquaredError : {} Accuracy : {}'.format(thre,MS,AS)
+    mod, thre, MS, AS, cm, p, r = logistic_modeling(X_train, X_test, y_train, y_test)
+    print mod.coef_
+    print 'Threshold : {} MeanSquaredError : {} Accuracy : {} Precision Score: {} Recall Score{}'.format(thre,MS,AS, p, r)
     print 'Confusion matrix', cm
 
     print '------------GradientBoostingClassifier------------'
 
-    mod, thre, MS, AS, cm = GradientBoostingClassifier(X_train, X_test, y_train, y_test)
-    print 'Threshold : {} MeanSquaredError : {} Accuracy : {}'.format(thre,MS,AS)
-    print 'Confusion matrix :', cm
+    mod, thre, MS, AS, cm, p, r = GradientBoostingClassifier(X_train, X_test, y_train, y_test)
+    print 'Threshold : {} MeanSquaredError : {} Accuracy : {} Precision Score: {} Recall Score{}'.format(thre,MS,AS, p, r)
+    print 'Confusion matrix', cm
 
     print '------------RandomForestClassifier------------'
 
-    mod, thre, MS, AS, cm = RandomForestClassifier(X_train, X_test, y_train, y_test)
-    print 'Threshold : {} MeanSquaredError : {} Accuracy : {}'.format(thre,MS,AS)
-    print 'Confusion matrix :', cm
+    mod, thre, MS, AS, cm, p, r = RandomForestClassifier(X_train, X_test, y_train, y_test)
+    print 'Threshold : {} MeanSquaredError : {} Accuracy : {} Precision Score: {} Recall Score{}'.format(thre,MS,AS, p, r)
+    print 'Confusion matrix', cm
     print '===================================================='
 
     '------------Feature Importance------------'
     feat_import = mod.feature_importances_
-    top10_nx = np.argsort(feat_import)[::-1][0:13]
+    top10_nx = np.argsort(feat_import)[::-1][0:14]
     feat_import = feat_import[top10_nx]
     print feat_import
     print mdata.columns[top10_nx]
